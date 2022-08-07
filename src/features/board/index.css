@@ -1,0 +1,10 @@
+.board {
+    display: inline-grid;
+    gap: 3px;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+}
+
+.disabled {
+    pointer-events: none;
+}

@@ -1,0 +1,24 @@
+.box {
+    border: 2px solid black;
+    transition: background-color 0.5s ease-in;
+    line-height: 60px;
+    font-size: 20px;
+    text-align: center;
+    
+}
+
+.zoom {
+    animation: zoom .7s;
+}
+
+.win {
+    background-color: green;
+}
+@keyframes zoom {
+    0% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1.0);
+    }
+}
