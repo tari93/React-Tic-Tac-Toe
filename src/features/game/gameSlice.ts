@@ -65,6 +65,11 @@ export const gameSlice = createSlice({
             state.status = 'Win'
             state.message = 'Congratulations, you win the game!'
         },
+        lose: (state, action) => {
+            state.filledLine = action.payload
+            state.status = 'Lose'
+            state.message = 'Ops! The robot\'s 3afrite'
+        },
         tie: (state, action) =>{
             state.status = 'Tie'
             state.message = 'A draw game'

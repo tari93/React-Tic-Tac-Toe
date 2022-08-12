@@ -49,44 +49,57 @@ function getLinesIntersection(matrix:Square[][], square:Square){
     }
     return lines
 }
+const winningCombinations:string[][] = [
+    ['0,0', '1,1','2,2'],
+    ['0,0', '0,1','0,2'],
+    ['1,0', '1,1', '1,2'],
+    ['2,0', '2,1', '2,2'],
+
+    ['0,0', '1,0','2,0'],
+    ['0,1', '1,1', '2,2'],
+    ['0,2', '1,2', '2,2'],
+
+    ['0,2', '1,1','2,0'],
+
+]
 
 function robotPlay(boardMatrix:Square[][]){
-    let robotSquare: Square | undefined = undefined
-    let index = 0
-    const filledLines = boardMatrix.filter((line:Square[]) =>{
-        for (let s of line){
-            if (s.symbol !== ''){
-                return line
-            }
-        }
-    })
+    let setX:Square[]=[]
+    let setO:Square[] = []
+    let possibleXMove: any[] = []
+    let possibleOMove: any[] = []
+    for (let line of boardMatrix) {
+        let selectedX:Square[] = line.filter((item) => item.symbol === 'X' )
+        setX.push(...selectedX)
+        let selectedO:Square[] = line.filter((item) => item.symbol === 'O')
+        setO.push(...selectedO)
+        
+    }
+    let arrX:any[] = setX.map((elem) => elem.position!.join(','))
+    let arrO = setO.map((elem) => elem.position!.join(','))
+    for (let line of winningCombinations) {
+        let scoreX = line.filter((item) => (arrX.includes(item))).length
+        let scoreO = line.filter((item) => (arrO.includes(item))).length
+        let resultX:any[]= line.filter((item) => !arrX.includes(item) && !arrO.includes(item))
+        .map(elem => ({elem:elem, score:scoreX }))
+        possibleXMove.push(...resultX)
+        let resultO:any[]= line.filter((item) => !arrX.includes(item) && !arrO.includes(item))
+        .map(elem => ({elem:elem, score:scoreO }))
+        possibleOMove.push(...resultO)
+    }
+    // Order possibles moves by score
+    possibleXMove.sort((a,b) => b.score - a.score)
+    possibleOMove.sort((a,b) => b.score - a.score)
+    let [row, column] = (possibleOMove[0].score >= possibleXMove[0].score  ?  possibleOMove[0].elem: possibleXMove[0].elem).split(',')
+    console.log(row,column)
+    return  boardMatrix[row][column]
 
-    while (robotSquare === undefined && index < filledLines.length){
-        console.log(`${index} ${filledLines[index]}`)
-        robotSquare = filledLines[index]!.find((s) => {
-            console.log(`synbol ${s}`)
-            return s.symbol === ''
-        })
-        index += 1
-    }
-    if (robotSquare === undefined){
-        let line:Square[] | undefined = boardMatrix.find((line) => {
-            return line.find((s) => {
-                return s.symbol === ''
-            })
-        })
-        robotSquare = line!.find((s) => {
-            return s.symbol === ''
-        })
-    }
-    return robotSquare
 }
 
 function* boardFilled(action: any): any{
     const matrix:Square[][] = yield select(getMatrix)
     let tempMatrix:Square[][] = matrix.filter((line) =>{
         line = line.filter((s) => {
-            console.log(`Symbol ${s.symbol !== ''}`)
             return s.symbol !== ''
         })
         if (line.length === 3){
@@ -96,6 +109,10 @@ function* boardFilled(action: any): any{
     if (JSON.stringify(matrix) === JSON.stringify(tempMatrix)){
         yield put({ type: 'game/tie' })
     }
+    else {
+        const robotTurn:Square = yield call(robotPlay, matrix)
+        yield put({ type: 'game/robotTurn', payload: {selectedSquare: robotTurn, symbol: 'O'}})
+    }
 }
 
 function* checkWin(action: any): any{
@@ -103,12 +120,11 @@ function* checkWin(action: any): any{
     const linesIntersection: Square[][] = yield call(getLinesIntersection, matrix, action.payload.selectedSquare)
     const filledLine:Square[]  = yield call(winning, linesIntersection, action.payload.selectedSquare)
     // get the correct line
-    if (filledLine.length === 3){
+    if (filledLine.length === 3 && filledLine.find((square) => square.symbol === 'X')){
         yield put({ type: 'game/win', payload: filledLine})
     }
-    else {
-        const robotTurn:Square = yield call(robotPlay, matrix)
-        yield put({ type: 'game/robotTurn', payload: {selectedSquare: robotTurn, symbol: 'O'}})
+    else if (filledLine.length === 3 && filledLine.find((square) => square.symbol === 'O')){
+        yield put({ type: 'game/lose', payload: filledLine})
     }
 }
 
@@ -116,6 +132,7 @@ function* checkWin(action: any): any{
 function* gameMiddleware(){
     yield takeEvery('game/selectSquare', boardFilled)
     yield takeEvery('game/selectSquare', checkWin)
+    yield takeEvery('game/robotTurn', checkWin)
 }
 
 
