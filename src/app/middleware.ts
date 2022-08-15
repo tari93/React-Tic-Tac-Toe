@@ -91,7 +91,6 @@ function robotPlay(boardMatrix:Square[][]){
     possibleXMove.sort((a,b) => b.score - a.score)
     possibleOMove.sort((a,b) => b.score - a.score)
     let [row, column] = (possibleOMove[0].score >= possibleXMove[0].score  ?  possibleOMove[0].elem: possibleXMove[0].elem).split(',')
-    console.log(row,column)
     return  boardMatrix[row][column]
 
 }
@@ -126,7 +125,7 @@ function* checkWin(action: any): any{
         else {
             if(status === 'Play' && playerTurn === 'Robot'){
                 const robotTurn:Square = yield call(robotPlay, matrix)
-                yield put({ type: 'game/robotTurn', payload: {selectedSquare: robotTurn, symbol: 'O'}})
+                yield put({ type: 'game/selectSquare', payload: {selectedSquare: robotTurn, symbol: 'O'}})
             }
         }
     }
@@ -135,9 +134,7 @@ function* checkWin(action: any): any{
 
 function* gameMiddleware(){
     yield takeLatest('game/selectSquare', checkWin)
-    yield takeLatest('game/robotTurn', checkWin)
 }
-
 
 
 export default gameMiddleware

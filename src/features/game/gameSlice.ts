@@ -43,25 +43,13 @@ export const gameSlice = createSlice({
                 })
                 return column
             })
-            state.playerTurn = 'Robot'
+            state.playerTurn = state.playerTurn === 'Robot' ? 'Player': 'Robot'
         },
         replay: (state, action) => {
             state.matrix = initMatrix()
             state.status = 'Play'
             state.filledLine = []
             state.message = ''
-        },
-        robotTurn: (state, action) => {
-            state.matrix = state.matrix.map((column) => {
-                column.map((s) => {
-                    if (s.position === action.payload.selectedSquare.position){
-                        s.isSelected = true
-                        s.symbol = action.payload.symbol
-                    }
-                    return s
-                })
-                return column
-            })
             state.playerTurn = 'Player'
         },
         win: (state, action) =>{
