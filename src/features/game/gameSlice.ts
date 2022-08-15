@@ -4,6 +4,7 @@ import { Square } from "../../types/square";
 export interface GameState {
     matrix: Square[][],
     status: 'Win' | 'Lose' | 'Tie' | 'Play',
+    playerTurn: 'Player' | 'Robot',
     filledLine: [],
     message: string
 }
@@ -22,6 +23,7 @@ function initMatrix(): Square[][] {
 const initialState: GameState = {
     matrix: initMatrix(),
     status: 'Play',
+    playerTurn: 'Player',
     filledLine: [],
     message: ''    
 }
@@ -41,6 +43,7 @@ export const gameSlice = createSlice({
                 })
                 return column
             })
+            state.playerTurn = 'Robot'
         },
         replay: (state, action) => {
             state.matrix = initMatrix()
@@ -59,6 +62,7 @@ export const gameSlice = createSlice({
                 })
                 return column
             })
+            state.playerTurn = 'Player'
         },
         win: (state, action) =>{
             state.filledLine =  action.payload

@@ -7,6 +7,10 @@
     
 }
 
+.selected {
+    pointer-events: none;
+}
+
 .zoom {
     animation: zoom .7s;
 }

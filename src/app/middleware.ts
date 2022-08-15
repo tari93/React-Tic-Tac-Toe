@@ -1,8 +1,10 @@
-import {call, put, select, takeEvery} from "redux-saga/effects"
+import {call, put, select, takeEvery, takeLatest} from "redux-saga/effects"
 import { Square } from "../types/square"
 import { RootState } from "./store"
 
 const getMatrix = (state:RootState) => state.game.matrix
+const getStatus = (state:RootState) => state.game.status
+const getPlayerTurn = (state:RootState) => state.game.playerTurn
 
 function winning(selectedLines:Square[][], filledSquare:Square) {
     let result:Square[] = []
@@ -54,11 +56,9 @@ const winningCombinations:string[][] = [
     ['0,0', '0,1','0,2'],
     ['1,0', '1,1', '1,2'],
     ['2,0', '2,1', '2,2'],
-
     ['0,0', '1,0','2,0'],
     ['0,1', '1,1', '2,2'],
     ['0,2', '1,2', '2,2'],
-
     ['0,2', '1,1','2,0'],
 
 ]
@@ -96,8 +96,12 @@ function robotPlay(boardMatrix:Square[][]){
 
 }
 
-function* boardFilled(action: any): any{
+function* checkWin(action: any): any{
     const matrix:Square[][] = yield select(getMatrix)
+    const status = yield select(getStatus)
+    const playerTurn = yield select(getPlayerTurn)
+    const linesIntersection: Square[][] = yield call(getLinesIntersection, matrix, action.payload.selectedSquare)
+    const filledLine:Square[]  = yield call(winning, linesIntersection, action.payload.selectedSquare)
     let tempMatrix:Square[][] = matrix.filter((line) =>{
         line = line.filter((s) => {
             return s.symbol !== ''
@@ -106,33 +110,32 @@ function* boardFilled(action: any): any{
             return line
         }
     })
-    if (JSON.stringify(matrix) === JSON.stringify(tempMatrix)){
-        yield put({ type: 'game/tie' })
-    }
-    else {
-        const robotTurn:Square = yield call(robotPlay, matrix)
-        yield put({ type: 'game/robotTurn', payload: {selectedSquare: robotTurn, symbol: 'O'}})
-    }
-}
-
-function* checkWin(action: any): any{
-    const matrix:Square[][] = yield select(getMatrix)
-    const linesIntersection: Square[][] = yield call(getLinesIntersection, matrix, action.payload.selectedSquare)
-    const filledLine:Square[]  = yield call(winning, linesIntersection, action.payload.selectedSquare)
     // get the correct line
     if (filledLine.length === 3 && filledLine.find((square) => square.symbol === 'X')){
         yield put({ type: 'game/win', payload: filledLine})
     }
+
     else if (filledLine.length === 3 && filledLine.find((square) => square.symbol === 'O')){
         yield put({ type: 'game/lose', payload: filledLine})
+    }
+
+    else {
+        if (JSON.stringify(matrix) === JSON.stringify(tempMatrix)){
+            yield put({ type: 'game/tie' })
+        }
+        else {
+            if(status === 'Play' && playerTurn === 'Robot'){
+                const robotTurn:Square = yield call(robotPlay, matrix)
+                yield put({ type: 'game/robotTurn', payload: {selectedSquare: robotTurn, symbol: 'O'}})
+            }
+        }
     }
 }
 
 
 function* gameMiddleware(){
-    yield takeEvery('game/selectSquare', boardFilled)
-    yield takeEvery('game/selectSquare', checkWin)
-    yield takeEvery('game/robotTurn', checkWin)
+    yield takeLatest('game/selectSquare', checkWin)
+    yield takeLatest('game/robotTurn', checkWin)
 }
 
 
